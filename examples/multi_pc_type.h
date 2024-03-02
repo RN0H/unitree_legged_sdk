@@ -2,18 +2,22 @@
 Copyright (c) 2020, Unitree Robotics.Co.Ltd. All rights reserved.
 Use of this source code is governed by the MPL-2.0 license, see LICENSE.
 ************************************************************************/
+#ifndef _MULTI_PC_TYPE_H_
+#define _MULTI_PC_TYPE_H_
 
-#ifndef _UNITREE_LEGGED_SDK_H_
-#define _UNITREE_LEGGED_SDK_H_
+#include <stdint.h>
 
-#include "comm.h"
-#include "safety.h"
-#include "udp.h"
-#include "loop.h"
-#include "lcm.h"
-#include "quadruped.h"
-#include <boost/bind.hpp>
+struct AAA{
+    int direction;
+    float deepth;
+    uint32_t crc;
+};
 
-#define UT UNITREE_LEGGED_SDK    //short name
+struct BBB{
+    float yaw;
+    float pitch;
+    float roll;
+    uint32_t crc;
+};
 
 #endif
