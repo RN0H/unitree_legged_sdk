@@ -1,15 +1,39 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(unitree_legged_sdk)
 
+
+message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64.*")
+  set(ARCH amd64)
+endif()
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64.*")
+  set(ARCH arm64)
+endif()
+
+
 include_directories(include)
 
 link_directories(lib)
 
 add_compile_options(-std=c++11)
 
-set(EXTRA_LIBS -pthread libunitree_legged_sdk_arm64.so lcm)
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64.*")
+   set(EXTRA_LIBS -pthread libunitree_legged_sdk_amd64.so lcm)
+endif()
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64.*")
+	set(EXTRA_LIBS -pthread libunitree_legged_sdk_arm64.so lcm)
+endif()
 
-set(CMAKE_CXX_FLAGS "-O3")
+set(CMAKE_CXX_FLAGS "-O3 -fPIC")
+
+find_package(catkin QUIET)
+if(${catkin_FOUND})
+  catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_SOURCE_DIR}/lib/libunitree_legged_sdk_arm64.so  )
+endif()
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # one pc one process
 add_executable(example_position examples/example_position.cpp)
