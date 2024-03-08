@@ -5,13 +5,16 @@
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
 #include <math.h>
 #include <iostream>
+#include <unistd.h>
+#include <string.h>
 
 using namespace UNITREE_LEGGED_SDK;
 
 class Custom
 {
 public:
-    Custom(uint8_t level): safe(LeggedType::A1), udp(level){
+    // Custom(): safe(LeggedType::A1, HIGHLEVEL), udp(){
+    Custom(uint8_t level): safe(LeggedType::A1), udp(8090,"192.168.123.10", 8007, HIGH_CMD_LENGTH, HIGH_STATE_LENGTH){
         udp.InitCmdData(cmd);
     }
     void UDPRecv();
@@ -20,12 +23,12 @@ public:
 
     Safety safe;
     UDP udp;
-    LowCmd cmd = {0};
-    LowState state = {0};
-    int Tpi = 0;
+    HighCmd cmd = {0};
+    HighState state = {0};
     int motiontime = 0;
-    float dt = 0.002;     // 0.001~0.01
+    float dt = 0.02;     // 0.001~0.01
 };
+
 
 void Custom::UDPRecv()
 {
@@ -39,44 +42,33 @@ void Custom::UDPSend()
 
 void Custom::RobotControl() 
 {
-    motiontime++;
+    motiontime += 2;
     udp.GetRecv(state);
+    // printf("%d   %f\n", motiontime, state.forwardSpeed);
 
-    // gravity compensation
-    cmd.motorCmd[FR_0].tau = -0.65f;
-    cmd.motorCmd[FL_0].tau = +0.65f;
-    cmd.motorCmd[RR_0].tau = -0.65f;
-    cmd.motorCmd[RL_0].tau = +0.65f;
+    cmd.forwardSpeed = 0.0f;
+    cmd.sideSpeed = 0.0f;
+    cmd.rotateSpeed = 0.0f;
+    cmd.bodyHeight = 0.0f;
 
-    if( motiontime >= 500){
-        float speed = 1 * sin(3*M_PI*Tpi/1000.0);
+    cmd.mode = 0;
+    cmd.roll  = 0;
+    cmd.pitch = 0;
+    cmd.yaw = 0;
 
-        cmd.motorCmd[FL_2].q = PosStopF;
-        cmd.motorCmd[FL_2].dq = speed;
-        cmd.motorCmd[FL_2].Kp = 0;
-        cmd.motorCmd[FL_2].Kd = 4;
-        cmd.motorCmd[FL_2].tau = 0.0f;
-        Tpi++;
-    }
-
-    if(motiontime > 10){
-        safe.PowerProtect(cmd, state, 1);
-        // You can uncomment it for position protection
-        // safe.PositionProtect(cmd, state, 0.087);
-    }
 
     udp.SetSend(cmd);
 }
 
 int main(void) 
 {
-    std::cout << "Communication level is set to LOW-level." << std::endl
-              << "WARNING: Make sure the robot is hung up." << std::endl
+    std::cout << "Communication level is set to HIGH-level." << std::endl
+              << "WARNING: Make sure the robot is standing on the ground." << std::endl
               << "Press Enter to continue..." << std::endl;
     std::cin.ignore();
 
-    Custom custom(LOWLEVEL);
-    // InitEnvironment();
+    Custom custom(HIGHLEVEL);
+    InitEnvironment();
     LoopFunc loop_control("control_loop", custom.dt,    boost::bind(&Custom::RobotControl, &custom));
     LoopFunc loop_udpSend("udp_send",     custom.dt, 3, boost::bind(&Custom::UDPSend,      &custom));
     LoopFunc loop_udpRecv("udp_recv",     custom.dt, 3, boost::bind(&Custom::UDPRecv,      &custom));
